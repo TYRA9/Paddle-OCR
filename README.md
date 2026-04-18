@@ -1,15 +1,11 @@
 # 基于 PaddleOCR 的复杂版面 PDF 批量数字化流水线
 
 ## 项目介绍
-本项目采用 **PaddleOCR** 作为核心光学字符识别（OCR）引擎，并专门调用其 **PP-StructureV3** 文档解析流水线，以应对大量语料文件中存在的**双栏、三栏、竖排、图文混排**等复杂PDF版面。
+本项目采用 **PaddleOCR** 作为核心光学字符识别（OCR, Optical character recognition）引擎，并专门调用其 **PP-StructureV3** 文档解析流水线，以应对大量语料文件中存在的**双栏、三栏、竖排、图文混排**等复杂PDF版面。至于 PaddleOCR 和 PP-StructureV3的**关系**，一句化说明白：PP-StructureV3 是 PaddleOCR 工具包内置的一个“高级文档解析流水线”。
 
 ### 项目用到的技术
-1. PddleOCR是一个开源的OCR引擎，Github地址：[PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) (版本 3.3.1+)
-2. **PP-StructureV3** 是 PaddleOCR 中专门用于复杂文档结构化的高级功能，它集成了版面分析、文字检测、文字识别和阅读顺序恢复等多个模型，能够智能地识别文档中的标题、段落、表格、图片等元素，并输出符合人类阅读顺序的结构化文本。
-- **关键能力**：
-  - **版面分析**：自动识别分栏、图片、表格区域。
-  - **阅读顺序还原**：针对双栏、三栏等排版，能够先读左侧栏再读右侧栏，彻底解决传统 OCR 工具“左右交错”的问题。
-  - **多格式输出**：支持输出 Markdown、JSON、Word (.docx) 及可视化图片。
+1. PddleOCR 是一个开源的 OCR 引擎，Github地址：[PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) (版本 3.3.1+)
+2. **PP-StructureV3** 是 PaddleOCR 中专门用于**复杂文档结构化**的高级功能，它集成了版面分析、文字检测、文字识别和阅读顺序恢复等多个模型，能够智能地识别文档中的标题、段落、表格、图片等元素，并输出符合人类阅读顺序的结构化文本。
 
 ### 项目实现的功能
 通过跟随本项目的步骤，读者朋友将能够：
@@ -39,29 +35,33 @@ conda activate paddleocr_env
       
         ![nvidia-smi.jpg](./pictures/nvidia-smi_output.jpg)
     - 拿到CUDA版本后，就可以去PaddleOCR官网去获取下载命令了。地址：https://www.paddlepaddle.org.cn/install/quick?docurl=/documentation/docs/zh/develop/install/pip/windows-pip.html
+    - 这里补充一条提示：如果你发现自己的CUDA版本过低，强烈建议去 **NVIDIA** 官网下载最新的驱动，更新CUDA版本，否则低版本的 CUDA 是不支持某些 Paddle 所需的依赖的，容易报错。
     - 在官网，选择自己的机器配置，如下图所示：
       
         ![install_page.jpg](./pictures/install_page.jpg)
-    - 以 up 自己的配置为例，因为我的 CUDA 是13.x版本，所以我直接安装12.9也是兼容的（向前兼容）。这里建议大家**直接复制执行**官方生成的命令。
+    - 以 up 自己的配置为例，因为我的 CUDA 是`13.x`版本，所以我直接安装`12.9`也是兼容的（向前兼容）。这里建议大家**直接复制执行**官方生成的命令。
+    - 这里我们第一步安装的，是**飞桨深度学习框架**，它提供 GPU 加速的底层数学运算，这是所有 `PaddleOCR` 功能的基础。
 2. **安装 PaddleOCR 本体** :
     - 具体指令如下：  
       
         ```powershell
         pip install paddleocr
         ```
+    - 这一步我们安装的是 `PaddleOCR` 工具包本体，它负责提供命令行入口和基础识别模型。
 3. **安装 PP-StructureV3 所需的附加依赖** : 
     - PP-StructureV3 是处理复杂版面的核心模块，它并不包含在基础包中，需要单独安装。具体指令如下：
       
         ```powershell
         pip install "paddlex[ocr]"
         ```
+    - 这一步我们安装的是 `PP-StructureV3` 所需的附加组件，因为版面分析模型、表格解析模型等高级依赖并不包含在 `paddleocr` 基础包中，需单独安装。
 4. **安装 python-docx** : 
     - PaddleOCR 在保存 Word 文档时会调用此库。安装它也能避免程序在保存环节报错中断。具体指令如下：  
 
         ```powershell
         pip install python-docx
         ```
-
+    - `PaddleOCR` 本身支持生成 docx 文件，该功能由 `PP-StructureV3` 流水线在输出时自动调用，但需要 `python-docx` 库作为运行时依赖。
 ### 3.测试环境是否就绪
 测试指令如下： 
 ```powershell
