@@ -138,8 +138,12 @@ python -c "import paddle; paddle.utils.run_check(); import paddleocr; print('Pad
 ---
 
 ## 讨论 (DISCUSSION)
-### 为何选择“逐页处理”而非“整本输出”？
+### 为何选择“逐页处理”而非“整本输出”的处理逻辑？
 - PaddleOCR 目前的默认行为是为 PDF 的**每一页**生成独立的文件（如图片、Markdown），而非输出一个单一的完整文档。这并非技术限制，而是一种面向生产环境的稳健设计。因为在处理大量的PDF时, 难免会遇到扫描模糊、页面损坏或特殊排版的“问题页”。逐页处理确保了某一页的失败不会导致整个 PDF 的解析任务崩溃。用户只需单独重新处理出错页面，然后用脚本替换旧文件即可，极大降低了维护成本。  
 - 而且, 独立的图片和文本文件让我们可以轻松定位并抽查任何一页的识别效果。发现错误时，能够进行精准修复。
 - 虽然本教程使用单命令串行处理，但这种分页输出的架构为未来编写多线程/多进程脚本、实现多页同时解析提供了天然的基础。
 - 后续优化：合并文档的路径————当所有 PDF 都成功解析并通过质量抽检后，我们后续可能会希望将每个 PDF 的零散 Markdown 文件合并为一个完整的文档。这其实非常简单：对于 Markdown 文件：我们可以使用简单的命令行工具（如 Windows 的 type *.md > merged.md 或 Linux 的 cat *.md > merged.md）按页顺序拼接。PaddleOCR 生成的 Markdown 已经带有正确的阅读顺序，合并后无需二次排版。如果需要合并 Word 文档或进行更复杂的文本清洗，编写一个简短的 Python 脚本调用 python-docx 库即可轻松实现，通常不超过 20 行代码。
+### 为何运行paddleocr模型时，提示大量的“Model files already exist. Using cached files”？
+- 这些以 Model files already exist. Using cached files. 开头的信息是 PaddleOCR 的正常工作日志，并非错误。它的作用是报告模型加载状态，告诉我们所有必需的模型文件都已在本地缓存中找到了，无需再次下载。
+- PaddleOCR 会在 C:\Users\<你的用户名>\.paddlex 路径下创建一个独立的模型缓存文件夹。这是因为PaddleOCR的内置工具 PP-StructureV3 需要加载一系列模型来处理版面分析、文字检测、表格识别等任务。这些模型文件加起来体积可观，每次运行加载后，都会存储在 C:\Users\Five\.paddlex 目录下，这就是C盘空间减少的直接原因。
+- PP-StructureV3 所需的全套模型文件总大小约为 2.5GB - 3.5GB，而且这些文件都会在我们首次运行成功之后，下载完毕并保存在 C:\Users\Five\.paddlex 目录下。一般来说，模型缓存所占用的空间是基本不会增长的，除非后续我们主动对 PaddleOCR 进行了重大的版本升级，比如主动执行了`pip install --upgrade paddleocr`命令，或者我们主动使用了新的流水线功能。所以，只要不是我们C盘空间特别吃紧，我们都可以保持现状，这样可以保证PaddleOCR 的高效运行😘。
